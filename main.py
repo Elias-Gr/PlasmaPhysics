@@ -8,7 +8,7 @@ curve.plot() """
 import matplotlib.pyplot as plt
 import numpy as np
 from simsopt._core import load
-from simsopt.geo import plot, MeanSquaredCurvature, CurveSurfaceDistance, CurveCurveDistance
+from simsopt.geo import plot, MeanSquaredCurvature, CurveSurfaceDistance, CurveCurveDistance, LpCurveCurvature
 from simsopt.geo import SurfaceRZFourier, create_equally_spaced_curves, \
     CurveLength, curves_to_vtk
 from simsopt.field import Current, coils_via_symmetries, BiotSavart
@@ -53,16 +53,18 @@ Jls = [CurveLength(c) for c in base_curves]
 
 LENGTH_WEIGHT = 0.01
 C_WEIGHT = 0.05
-DIST_WEIGHT = 2
+DIST_WEIGHT = 1
 CCD_WEIGHT = 1
 
 LENGTH_TARGET = 10
-MSC_THRESHOLD = 9
+MSC_THRESHOLD = 10
 DIST_THRESHOLD = 0.1
 CCDIST_TH = 0.3
+THRESH_CURV = 1
 
 Jl = QuadraticPenalty(sum(Jls), LENGTH_TARGET, "max")
 Jmscs = [MeanSquaredCurvature(c) for c in base_curves]
+#Jcc = [LpCurveCurvature(c, 1) for c in base_curves]
 Jc = sum(QuadraticPenalty(J, MSC_THRESHOLD, 'max') for J in Jmscs)
 
 Jd = CurveSurfaceDistance(base_curves, s, DIST_THRESHOLD)
@@ -72,7 +74,7 @@ Jccd = CurveCurveDistance(base_curves, CCDIST_TH)
 ## penalty function: (change penalties fitting to your problem)
 ## (here it's length of coils curves. use radius for 1st problem i guess)
 
-JF = 2*Jf + LENGTH_WEIGHT * Jl + C_WEIGHT * Jc + DIST_WEIGHT * Jd + CCD_WEIGHT * Jccd
+JF = 2*Jf#+ LENGTH_WEIGHT * Jl + C_WEIGHT * Jc + DIST_WEIGHT * Jd + CCD_WEIGHT * Jccd
 
 
 B_dot_n = np.sum(bs.B().reshape((nphi, ntheta, 3)) * s.unitnormal(), axis=2)
@@ -118,4 +120,7 @@ print("Sum of lengths of base curves:", total_curve_length)
 
 
 plot(coils + [s], engine="plotly", close=True)
-### minimization implementation
+
+
+
+### get curves from input coils to try minimization
