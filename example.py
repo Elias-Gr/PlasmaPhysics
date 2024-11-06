@@ -57,7 +57,7 @@ MAXITER = 50 if in_github_actions else 300
 
 # File for the desired boundary magnetic surface:
 TEST_DIR = (Path(__file__).parent / ".." / ".." / "tests" / "test_files").resolve()
-filename = TEST_DIR / 'input.LandremanPaul2021_QA'
+filename = TEST_DIR / 'input'
 
 # Directory for output
 OUT_DIR = "./output/"

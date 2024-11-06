@@ -1,10 +1,3 @@
-""" #%%
-from simsopt.geo import CurveXYZFourier
-
-curve = CurveXYZFourier(300,1)
-curve.set_dofs([0,0,0,0,1,0,0,0,1])
-curve.plot() """
-
 import matplotlib.pyplot as plt
 import numpy as np
 from simsopt._core import load
@@ -14,86 +7,71 @@ from simsopt.geo import SurfaceRZFourier, create_equally_spaced_curves, \
 from simsopt.field import Current, coils_via_symmetries, BiotSavart
 from simsopt.objectives import SquaredFlux, QuadraticPenalty
 from scipy.optimize import minimize
+import simsoptpp as sopp
 
-res = load(f'serial0021326.json')
+surface_coils = SurfaceRZFourier()
+surface_two = SurfaceRZFourier()
+surface_plot_coils = SurfaceRZFourier()
 
-MAXITER = 300
+MAXITER = 500
 
-USE_PRESIM = False
+Radius = 0.6 #parameter search
 
 
+surface_coils.set_rc(0,0,1)
+surface_coils.set_rc(1,0,Radius-0.1)
+surface_coils.set_zs(1,0,Radius-0.1)
 
+surface_two.set_rc(0,0,1)
+surface_two.set_rc(1,0,Radius+0.1)
+surface_two.set_zs(1,0,Radius+0.1)
+
+surface_plot_coils.set_rc(0,0,1)
+surface_plot_coils.set_rc(1,0,Radius)
+surface_plot_coils.set_zs(1,0,Radius)
 
 nphi = 32
 ntheta = 32
 s = SurfaceRZFourier.from_vmec_input('input', range="full torus", nphi=nphi, ntheta=ntheta)
 
-##creating coils and currents:
-if USE_PRESIM:
-    coils_presim = res[1]
-    surface = res[0][-1]
-    base_curves = [x.curve for x in coils_presim]
-    base_currents = [x.current for x in coils_presim]
-    base_currents[0].fix_all()
-else:
-    ncoils = 4
-    base_curves = create_equally_spaced_curves(ncoils, s.nfp, stellsym=True, R0=1, R1=0.6, order=5)
-    base_currents = [Current(1.0) * 1e5 for i in range(ncoils)]
-    base_currents[0].fix_all()
-   
-   
-
+ncoils = 3
+base_curves = create_equally_spaced_curves(ncoils, s.nfp, stellsym=True, R0=1, R1=Radius, order=3)
+base_currents = [Current(1.0) * 1e5 for i in range(ncoils)]
+base_currents[0].fix_all()
 
 coils = coils_via_symmetries(base_curves, base_currents, s.nfp, True)
 
-plot(coils + [s], engine="plotly", close=True)
-
-import pdb; pdb.set_trace()
-exit()
-
-##calculating magnetic field from coils:
+#plot([surface_coils] + coils +[s], engine="plotly", close=True)
 
 bs = BiotSavart(coils)
 bs.set_points(s.gamma().reshape((-1, 3)))
 
 ##setting up parameters for penalty function:
 
-Jf = SquaredFlux(s, bs)
-Jls = [CurveLength(c) for c in base_curves]
-
-
-
-LENGTH_TARGET = 13.5
-MSC_THRESHOLD = 10
-CURVATURE_THRESHOLD = 10
+CURVATURE_THRESHOLD = 8.5
 DIST_THRESHOLD = 0.1
-CCDIST_TH = 0.1
-THRESH_CURV = 1
+CCDIST_THRESH = 0.05
 
-LENGTH_WEIGHT = 0.01
-C_WEIGHT = 0.05
-DIST_WEIGHT = 1
-CCD_WEIGHT = 1
-WEIGHT_CURV = 2
-WEIGHTB = 0.5
-
-Jl = QuadraticPenalty(sum(Jls), LENGTH_TARGET, "max")
-Jmscs = [MeanSquaredCurvature(c) for c in base_curves]
+Jf = SquaredFlux(s, bs)
 
 Jcc1 = [LpCurveCurvature(c, 1) for c in base_curves]
 Jcc = sum(QuadraticPenalty(J, CURVATURE_THRESHOLD, 'max') for J in Jcc1)
 
-Jc = sum(QuadraticPenalty(J, MSC_THRESHOLD, 'max') for J in Jmscs)
+
+#import pdb; pdb.set_trace()
+
+Jdist_1 = CurveSurfaceDistance(base_curves, surface_coils, DIST_THRESHOLD)
+Jdist_2 = CurveSurfaceDistance(base_curves, surface_two, DIST_THRESHOLD)
+Jccdist = CurveCurveDistance(base_curves,CCDIST_THRESH)
+
+WEIGHT_DIST = 100
+WEIGHT_CURVE = 3
+CCDIST_WEIGHT = 1
+
+JF = Jf + WEIGHT_CURVE * Jcc + WEIGHT_DIST * Jdist_1 + WEIGHT_DIST * Jdist_2 + CCDIST_WEIGHT * Jccdist
 
 
-Jd = CurveSurfaceDistance(base_curves, s, DIST_THRESHOLD)
-
-Jccd = CurveCurveDistance(base_curves, CCDIST_TH)
-
-## penalty function: (change penalties fitting to your problem)
-## (here it's length of coils curves. use radius for 1st problem i guess)
-
-JF = WEIGHTB*Jf + WEIGHT_CURV*Jcc #+ CCD_WEIGHT * Jccd#+ LENGTH_WEIGHT * Jl + C_WEIGHT * Jc + DIST_WEIGHT * Jd 
+##### minimization #####
 
 
 B_dot_n = np.sum(bs.B().reshape((nphi, ntheta, 3)) * s.unitnormal(), axis=2)
@@ -132,7 +110,7 @@ print("""
 B_dot_n = np.sum(bs.B().reshape((nphi, ntheta, 3)) * s.unitnormal(), axis=2)
 B_dot_n_max = np.max(np.abs(B_dot_n)).copy()
 
-total_curve_length_start = sum(func.J() for func in Jls).copy()
+#total_curve_length_start = sum(func.J() for func in Jls).copy()
 
 
 res = minimize(fun, dofs, jac=True, method='L-BFGS-B',
@@ -141,12 +119,12 @@ res = minimize(fun, dofs, jac=True, method='L-BFGS-B',
 B_dot_n = np.sum(bs.B().reshape((nphi, ntheta, 3)) * s.unitnormal(), axis=2)
 print('starting max|B dot n|:', B_dot_n_max)
 print('Final max|B dot n|:', np.max(np.abs(B_dot_n)))
-total_curve_length = sum(func.J() for func in Jls)
-print("starting Sum of lengths of base curves:", total_curve_length_start)
-print("Sum of lengths of base curves:", total_curve_length)
+#total_curve_length = sum(func.J() for func in Jls)
+#print("starting Sum of lengths of base curves:", total_curve_length_start)
+#print("Sum of lengths of base curves:", total_curve_length)
 
 
+fig = plot(coils + [s] + [surface_plot_coils], engine="plotly", close=True)
 fig = plot(coils + [s], engine="plotly", close=True)
 
 #import pdb; pdb.set_trace()
-
