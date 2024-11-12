@@ -14,10 +14,11 @@ from simsopt.geo import SurfaceRZFourier, create_equally_spaced_curves, \
 from simsopt.field import Current, coils_via_symmetries, BiotSavart
 from simsopt.objectives import SquaredFlux, QuadraticPenalty
 from scipy.optimize import minimize
+from scipy.optimize import OptimizeResult
 
 res = load(f'serial0021326.json')
 
-MAXITER = 300
+MAXITER = 600
 
 USE_PRESIM = False
 
@@ -38,18 +39,17 @@ if USE_PRESIM:
 else:
     ncoils = 4
     base_curves = create_equally_spaced_curves(ncoils, s.nfp, stellsym=True, R0=1, R1=0.6, order=5)
-    base_currents = [Current(1.0) * 1e5 for i in range(ncoils)]
-    base_currents[0].fix_all()
+    base_currents = [Current(1.0) * 1e2 for i in range(ncoils)]
+    #base_currents[0].fix_all()
    
    
 
 
 coils = coils_via_symmetries(base_curves, base_currents, s.nfp, True)
 
-plot(coils + [s], engine="plotly", close=True)
 
-import pdb; pdb.set_trace()
-exit()
+
+
 
 ##calculating magnetic field from coils:
 
@@ -65,17 +65,17 @@ Jls = [CurveLength(c) for c in base_curves]
 
 LENGTH_TARGET = 13.5
 MSC_THRESHOLD = 10
-CURVATURE_THRESHOLD = 10
+CURVATURE_THRESHOLD = 8.5
 DIST_THRESHOLD = 0.1
 CCDIST_TH = 0.1
 THRESH_CURV = 1
 
-LENGTH_WEIGHT = 0.01
-C_WEIGHT = 0.05
-DIST_WEIGHT = 1
-CCD_WEIGHT = 1
-WEIGHT_CURV = 2
-WEIGHTB = 0.5
+LENGTH_WEIGHT = 0
+C_WEIGHT = 0
+DIST_WEIGHT = 0
+CCD_WEIGHT = 0
+WEIGHT_CURV = 3
+WEIGHTB = 1000
 
 Jl = QuadraticPenalty(sum(Jls), LENGTH_TARGET, "max")
 Jmscs = [MeanSquaredCurvature(c) for c in base_curves]
@@ -93,7 +93,7 @@ Jccd = CurveCurveDistance(base_curves, CCDIST_TH)
 ## penalty function: (change penalties fitting to your problem)
 ## (here it's length of coils curves. use radius for 1st problem i guess)
 
-JF = WEIGHTB*Jf + WEIGHT_CURV*Jcc #+ CCD_WEIGHT * Jccd#+ LENGTH_WEIGHT * Jl + C_WEIGHT * Jc + DIST_WEIGHT * Jd 
+JF = WEIGHTB*Jf + WEIGHT_CURV*Jcc + CCD_WEIGHT * Jccd+ LENGTH_WEIGHT * Jl + C_WEIGHT * Jc + DIST_WEIGHT * Jd 
 
 
 B_dot_n = np.sum(bs.B().reshape((nphi, ntheta, 3)) * s.unitnormal(), axis=2)
@@ -135,8 +135,22 @@ B_dot_n_max = np.max(np.abs(B_dot_n)).copy()
 total_curve_length_start = sum(func.J() for func in Jls).copy()
 
 
+call_result = []
+
+def callback(intermediate_result: OptimizeResult):
+    call_result.append(intermediate_result['fun'])
+
 res = minimize(fun, dofs, jac=True, method='L-BFGS-B',
-               options={'maxiter': MAXITER, 'maxcor': 500, 'iprint': 5}, tol=1e-15)
+               options={'maxiter': MAXITER, 'maxcor': 500, 'iprint': 5}, tol=1e-15,
+               callback=callback)
+
+
+plt.plot(call_result)
+plt.xlabel('iterations')
+plt.ylabel('F(x)')
+plt.yscale('log')
+plt.grid('minor')
+plt.show()
 
 B_dot_n = np.sum(bs.B().reshape((nphi, ntheta, 3)) * s.unitnormal(), axis=2)
 print('starting max|B dot n|:', B_dot_n_max)
@@ -148,5 +162,9 @@ print("Sum of lengths of base curves:", total_curve_length)
 
 fig = plot(coils + [s], engine="plotly", close=True)
 
-#import pdb; pdb.set_trace()
+
+
+print('currents:' + [str(coils[i].current.get_value()) for i,_ in enumerate(coils)])
+
+import pdb; pdb.set_trace()
 
