@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import os
+import sys
 from simsopt._core import load
 from simsopt.geo import plot, MeanSquaredCurvature, CurveSurfaceDistance, CurveCurveDistance, LpCurveCurvature
 from simsopt.geo import SurfaceRZFourier, create_equally_spaced_curves, \
@@ -9,16 +11,27 @@ from simsopt.objectives import SquaredFlux, QuadraticPenalty
 from scipy.optimize import minimize
 import simsoptpp as sopp
 from scipy.optimize import OptimizeResult
+from parameters import *
+import plotly.express as px
+from simsopt._core import save
+import runPoincare as rp
+
+#### change into folder (USE YOUR OWN DIRECTORY)
+
+
+os.chdir(directory)
+
+if not os.path.exists(foldername):
+    os.mkdir(foldername)
+
+
+#### creating all surfaces to pin the coils on Torus with fixed Radius via CurveSurfaceDistance ####
 
 surface_coils = SurfaceRZFourier()
 surface_two = SurfaceRZFourier()
 surface_plot_coils = SurfaceRZFourier()
 
-MAXITER = 500
 
-Radius = 0.6 #parameter search
-
-distance_from_surfaces = 0.3
 
 surface_coils.set_rc(0,0,1)
 surface_coils.set_rc(1,0,Radius-distance_from_surfaces)
@@ -32,33 +45,30 @@ surface_plot_coils.set_rc(0,0,1)
 surface_plot_coils.set_rc(1,0,Radius)
 surface_plot_coils.set_zs(1,0,Radius)
 
-plot([surface_coils], engine='plotly')
-plot([surface_two], engine = 'plotly')
 
-nphi = 64
-ntheta = 64
+
+#### importing Surface from vmec
+
 s = SurfaceRZFourier.from_vmec_input('input', range="full torus", nphi=nphi, ntheta=ntheta)
 
 
+### creating coils as starting condition
 
-
-ncoils = 3
-base_curves = create_equally_spaced_curves(ncoils, s.nfp, stellsym=True, R0=1, R1=Radius, order=3)
-base_currents = [Current(1.0) * 1e2 for i in range(ncoils)]
-#base_currents[0].fix_all()
+base_curves = create_equally_spaced_curves(ncoils, s.nfp, stellsym=True, R0=1, R1=Radius, order=fourierordercoils)
+base_currents = [Current(1.0) * CURRENT for i in range(ncoils)]
+if FIXEDCURRENT:
+    base_currents[0].fix_all()  ## has to be used when going for more iterations (~>500)
 
 coils = coils_via_symmetries(base_curves, base_currents, s.nfp, True)
 
 #plot([surface_coils] + coils +[s], engine="plotly", close=True)
 
-bs = BiotSavart(coils)
+bs = BiotSavart(coils)    ### calculates magnetic fieeld from coils
 bs.set_points(s.gamma().reshape((-1, 3)))
 
-##setting up parameters for penalty function:
 
-CURVATURE_THRESHOLD = 8.5
-DIST_THRESHOLD = distance_from_surfaces
-CCDIST_THRESH = 0.05
+
+#### creating cost function:
 
 Jf = SquaredFlux(s, bs, definition = 'quadratic flux')
 
@@ -72,21 +82,23 @@ Jdist_1 = CurveSurfaceDistance(base_curves, surface_coils, DIST_THRESHOLD)
 Jdist_2 = CurveSurfaceDistance(base_curves, surface_two, DIST_THRESHOLD)
 Jccdist = CurveCurveDistance(base_curves, CCDIST_THRESH)
 
-WEIGHT_DIST = 110
-WEIGHT_CURVE = 3
-CCDIST_WEIGHT = 100
 
-JF = 1000*Jf + WEIGHT_CURVE * Jcc + WEIGHT_DIST * Jdist_1 + WEIGHT_DIST * Jdist_2 + CCDIST_WEIGHT * Jccdist
+
+JF = BDOTN_WEIGHT*Jf + WEIGHT_CURVE * Jcc + WEIGHT_DIST * Jdist_1 + WEIGHT_DIST * Jdist_2 + CCDIST_WEIGHT * Jccdist
+
+
+
+#### create output file
+
+stdoutOrigin=sys.stdout 
+sys.stdout = open(foldername+"/log.txt", "w")
+
 
 
 ##### minimization #####
 
 
 B_dot_n = np.sum(bs.B().reshape((nphi, ntheta, 3)) * s.unitnormal(), axis=2)
-
-print('Initial max|B dot n|:', np.max(np.abs(B_dot_n)))
-
-
 
 
 def fun(dofs):
@@ -120,6 +132,11 @@ B_dot_n_max = np.max(np.abs(B_dot_n)).copy()
 
 #total_curve_length_start = sum(func.J() for func in Jls).copy()
 
+
+
+
+####  creating function to extract cost function at each iteration step and save into call_result array
+
 call_result = []
 
 def callback(intermediate_result: OptimizeResult):
@@ -136,19 +153,51 @@ print('Final max|B dot n|:', np.max(np.abs(B_dot_n)))
 #print("starting Sum of lengths of base curves:", total_curve_length_start)
 #print("Sum of lengths of base curves:", total_curve_length)
 
+
+
+if POINCARE:
+    rp.run_poincare_simsopt(coils,'variant',foldername+'/poincare',s,True,FILEDLINE_PARAMS)
+    rp.plot_poincare(foldername+'/poincare', PLOT_PARAMS, s.nfp, 'variant', save=None)
+
+
+#### plotting cost function over iteration
+
 plt.plot(call_result)
 plt.xlabel('iterations')
 plt.ylabel('F(x)')
 plt.yscale('log')
 plt.grid('minor')
-plt.savefig('cost_function.png')
-plt.show()
+plt.savefig(foldername+'/cost_function.png')
 
-fig = plot(coils + [s] + [surface_coils], engine="plotly", close=True)
+
+
+#### plotting coils with different surfaces to inspect complexity and confirm radial pinning
+
+
 fig = plot(coils + [s], engine="plotly", close=True)
+fig.write_html(foldername+'/coils_and_surf.html')
 fig = plot(coils + [surface_plot_coils], engine="plotly", close=True)
+fig.write_html(foldername+'/coils_fixedradius.html')
+
+#### save coil curves
+
+save(bs,foldername+'/bs.json')
+
+curves = [c.curve for c in coils]
+curves_to_vtk(curves, foldername+"/curves_opt")
+
+#### make sure currents don't shrink too much when disabling fix currents
 
 print('currents:')
 print([str(coils[i].current.get_value()) for i,_ in enumerate(coils)])
+
+os.chdir(directory)
+
+#### close output file
+
+sys.stdout.close()
+sys.stdout=stdoutOrigin
+
+
 
 #import pdb; pdb.set_trace()

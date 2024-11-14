@@ -164,7 +164,7 @@ fig = plot(coils + [s], engine="plotly", close=True)
 
 
 
-print('currents:' + [str(coils[i].current.get_value()) for i,_ in enumerate(coils)])
+print('currents:', [str(coils[i].current.get_value()) for i,_ in enumerate(coils)])
 
 import pdb; pdb.set_trace()
 
