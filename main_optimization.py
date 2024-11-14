@@ -31,6 +31,7 @@ surface_coils = SurfaceRZFourier()
 surface_two = SurfaceRZFourier()
 surface_plot_coils = SurfaceRZFourier()
 
+### do another surface not as a torus but a ovaloid on the outside
 
 
 surface_coils.set_rc(0,0,1)
@@ -57,7 +58,14 @@ s = SurfaceRZFourier.from_vmec_input('input', range="full torus", nphi=nphi, nth
 base_curves = create_equally_spaced_curves(ncoils, s.nfp, stellsym=True, R0=1, R1=Radius, order=fourierordercoils)
 base_currents = [Current(1.0) * CURRENT for i in range(ncoils)]
 if FIXEDCURRENT:
-    base_currents[0].fix_all()  ## has to be used when going for more iterations (~>500)
+    base_currents[0].fix_all()  ## has to be used when going for more iterations (~>500)#
+
+if PRESIM_OPT:
+    coils_presim = load(f'serial0021326.json')[1]
+    #coils_presim = load('test_presim/bs.json').coils
+    base_curves = [x.curve for x in coils_presim]
+    base_currents = [x.current for x in coils_presim]
+    
 
 coils = coils_via_symmetries(base_curves, base_currents, s.nfp, True)
 

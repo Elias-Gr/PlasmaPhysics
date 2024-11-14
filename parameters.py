@@ -43,8 +43,8 @@ FILEDLINE_PARAMS = {
         "STELL_SYM": STELLSYM,
         "R_START": RSTART,
         "Z_START": ZSTART,
-        "FOLLOW_TOL": 1e-12,
-        "TMAX": 25000,
+        "FOLLOW_TOL": 1e-7,
+        "TMAX": 2500,
         "DEGREE": 4,
         "NPLANES": 4
 
@@ -56,6 +56,7 @@ PRESIM = False
 ###### ------------------- Optimization Parameters ----------------------- ########
 ###################################################################################
 
+PRESIM_OPT = True
 
 MAXITER = 500
 
@@ -63,7 +64,7 @@ FIXEDCURRENT = True
 
 Radius = 0.6 #parameter search
 
-foldername = 'test_2_Coils'
+foldername = 'test_presim_2'
 
 distance_from_surfaces = 0.3
 
@@ -72,14 +73,14 @@ ntheta = 32
 
 CURRENT = 1e2
 
-fourierordercoils = 3
+fourierordercoils = 2
 
-ncoils = 2
+ncoils = 3
 
-WEIGHT_DIST = 1
+WEIGHT_DIST = 100
 WEIGHT_CURVE = 1
-CCDIST_WEIGHT = 0
-BDOTN_WEIGHT = 5000
+CCDIST_WEIGHT = 1000
+BDOTN_WEIGHT = 100
 
 
 CURVATURE_THRESHOLD = 8.5
