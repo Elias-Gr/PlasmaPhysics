@@ -27,30 +27,46 @@ if not os.path.exists(foldername):
 
 #### creating all surfaces to pin the coils on Torus with fixed Radius via CurveSurfaceDistance ####
 
-surface_coils = SurfaceRZFourier()
-surface_two = SurfaceRZFourier()
-surface_plot_coils = SurfaceRZFourier()
+inner_torus = SurfaceRZFourier()
+outer_torus = SurfaceRZFourier()
+Coil_torus = SurfaceRZFourier()
+outer_surface = SurfaceRZFourier()
+Surface = SurfaceRZFourier()
 
 ### do another surface not as a torus but a ovaloid on the outside
 
+outer_surface.set_rc(0,0,0)
+outer_surface.set_rc(1,0,Radius_outer_surface)
+outer_surface.set_zs(1,0,Radius_outer_surface_z)
 
-surface_coils.set_rc(0,0,1)
-surface_coils.set_rc(1,0,Radius-distance_from_surfaces)
-surface_coils.set_zs(1,0,Radius-distance_from_surfaces)
+Surface.set_rc(0,0,0)
+Surface.set_rc(1,0,Surface_r)
+Surface.set_zs(1,0,Surface_z)
 
-surface_two.set_rc(0,0,1)
-surface_two.set_rc(1,0,Radius+distance_from_surfaces)
-surface_two.set_zs(1,0,Radius+distance_from_surfaces)
+inner_torus.set_rc(0,0,1)
+inner_torus.set_rc(1,0,Radius-distance_from_surfaces)
+inner_torus.set_zs(1,0,Radius-distance_from_surfaces)
 
-surface_plot_coils.set_rc(0,0,1)
-surface_plot_coils.set_rc(1,0,Radius)
-surface_plot_coils.set_zs(1,0,Radius)
+outer_torus.set_rc(0,0,1)
+outer_torus.set_rc(1,0,Radius+distance_from_surfaces)
+outer_torus.set_zs(1,0,Radius+distance_from_surfaces)
+
+Coil_torus.set_rc(0,0,1)
+Coil_torus.set_rc(1,0,Radius)
+Coil_torus.set_zs(1,0,Radius)
 
 
 
 #### importing Surface from vmec
 
 s = SurfaceRZFourier.from_vmec_input('input', range="full torus", nphi=nphi, ntheta=ntheta)
+
+#plot([Surface] + [Coil_torus], engine = 'plotly', close=True, opacity = 0.3)
+
+#exit()
+
+
+
 
 
 ### creating coils as starting condition
@@ -86,13 +102,15 @@ Jcc = sum(QuadraticPenalty(J, CURVATURE_THRESHOLD, 'max') for J in Jcc1)
 
 #import pdb; pdb.set_trace()
 
-Jdist_1 = CurveSurfaceDistance(base_curves, surface_coils, DIST_THRESHOLD)
-Jdist_2 = CurveSurfaceDistance(base_curves, surface_two, DIST_THRESHOLD)
+Jdist_1 = CurveSurfaceDistance(base_curves, inner_torus, DIST_THRESHOLD)
+Jdist_2 = CurveSurfaceDistance(base_curves, outer_torus, DIST_THRESHOLD)
+Jdist_3 = CurveSurfaceDistance(base_curves, outer_surface, DIST_THRESHOLD_OUT)
 Jccdist = CurveCurveDistance(base_curves, CCDIST_THRESH)
 
 
 
-JF = BDOTN_WEIGHT*Jf + WEIGHT_CURVE * Jcc + WEIGHT_DIST * Jdist_1 + WEIGHT_DIST * Jdist_2 + CCDIST_WEIGHT * Jccdist
+JF = (BDOTN_WEIGHT*Jf + WEIGHT_CURVE * Jcc + WEIGHT_DIST * Jdist_1 + WEIGHT_DIST * Jdist_2 
+    + CCDIST_WEIGHT * Jccdist + WEIGHT_DIST_OUT * Jdist_3)
 
 
 
@@ -184,7 +202,7 @@ plt.savefig(foldername+'/cost_function.png')
 
 fig = plot(coils + [s], engine="plotly", close=True)
 fig.write_html(foldername+'/coils_and_surf.html')
-fig = plot(coils + [surface_plot_coils], engine="plotly", close=True)
+fig = plot(coils + [Coil_torus], engine="plotly", close=True)
 fig.write_html(foldername+'/coils_fixedradius.html')
 
 #### save coil curves
