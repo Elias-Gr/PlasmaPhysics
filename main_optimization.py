@@ -3,21 +3,18 @@ import numpy as np
 import os
 import sys
 from simsopt._core import load
-from simsopt.geo import plot, MeanSquaredCurvature, CurveSurfaceDistance, CurveCurveDistance, LpCurveCurvature
-from simsopt.geo import SurfaceRZFourier, create_equally_spaced_curves, \
-    CurveLength, curves_to_vtk
+from simsopt.geo import plot, CurveSurfaceDistance, CurveCurveDistance, LpCurveCurvature
+from simsopt.geo import SurfaceRZFourier, create_equally_spaced_curves, curves_to_vtk
 from simsopt.field import Current, coils_via_symmetries, BiotSavart
 from simsopt.objectives import SquaredFlux, QuadraticPenalty
 from scipy.optimize import minimize
 import simsoptpp as sopp
 from scipy.optimize import OptimizeResult
 from parameters import *
-import plotly.express as px
 from simsopt._core import save
 import runPoincare as rp
 
 #### change into folder (USE YOUR OWN DIRECTORY)
-
 
 os.chdir(directory)
 
@@ -43,17 +40,17 @@ Surface.set_rc(0,0,0)
 Surface.set_rc(1,0,Surface_r)
 Surface.set_zs(1,0,Surface_z)
 
-inner_torus.set_rc(0,0,1)
-inner_torus.set_rc(1,0,Radius-distance_from_surfaces)
-inner_torus.set_zs(1,0,Radius-distance_from_surfaces)
+inner_torus.set_rc(0,0,R)
+inner_torus.set_rc(1,0,r_coil_surface-r_distance_from_surface)
+inner_torus.set_zs(1,0,r_coil_surface-r_distance_from_surface)
 
-outer_torus.set_rc(0,0,1)
-outer_torus.set_rc(1,0,Radius+distance_from_surfaces)
-outer_torus.set_zs(1,0,Radius+distance_from_surfaces)
+outer_torus.set_rc(0,0,R)
+outer_torus.set_rc(1,0,r_coil_surface+r_distance_from_surface)
+outer_torus.set_zs(1,0,r_coil_surface+r_distance_from_surface)
 
-Coil_torus.set_rc(0,0,1)
-Coil_torus.set_rc(1,0,Radius)
-Coil_torus.set_zs(1,0,Radius)
+Coil_torus.set_rc(0,0,R)
+Coil_torus.set_rc(1,0,r_coil_surface)
+Coil_torus.set_zs(1,0,r_coil_surface)
 
 
 
@@ -61,17 +58,31 @@ Coil_torus.set_zs(1,0,Radius)
 
 s = SurfaceRZFourier.from_vmec_input('input', range="full torus", nphi=nphi, ntheta=ntheta)
 
-#plot([Surface] + [Coil_torus], engine = 'plotly', close=True, opacity = 0.3)
 
-#exit()
 
+'''
+
+ax = plot([s], engine = 'matplotlib', close=True, show = False)
+for data in ax.collections:
+    x = data._vec
+    print(x)
+
+n=1
+
+for x in x:
+    print(np.max(x))
+    print(np.min(x))
+    np.savetxt('surface'+str(n)+'.txt',x)
+    n += 1
+
+    '''
 
 
 
 
 ### creating coils as starting condition
 
-base_curves = create_equally_spaced_curves(ncoils, s.nfp, stellsym=True, R0=1, R1=Radius, order=fourierordercoils)
+base_curves = create_equally_spaced_curves(ncoils, s.nfp, stellsym=True, R0=1, R1=r_coil_surface, order=fourierordercoils)
 base_currents = [Current(1.0) * CURRENT for i in range(ncoils)]
 if FIXEDCURRENT:
     base_currents[0].fix_all()  ## has to be used when going for more iterations (~>500)#
@@ -90,8 +101,9 @@ coils = coils_via_symmetries(base_curves, base_currents, s.nfp, True)
 bs = BiotSavart(coils)    ### calculates magnetic fieeld from coils
 bs.set_points(s.gamma().reshape((-1, 3)))
 
+plot([s]+coils, engine = 'plotly', close=True, show = True)
 
-
+exit()
 #### creating cost function:
 
 Jf = SquaredFlux(s, bs, definition = 'quadratic flux')

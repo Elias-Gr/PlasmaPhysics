@@ -7,7 +7,7 @@ import numpy as np
 directory ="/Users/eliasgreil/visual studio/Plasma_Physics/"
 
 
-foldername = 'test_presim_4'
+foldername = 'test_surfaces'
 
 
 ##################################################################################
@@ -62,21 +62,21 @@ MAXITER = 500
 
 FIXEDCURRENT = True
 
-Radius = 0.6 #parameter search
+r_coil_surface = 0.6 #parameter search
 
+R = 1
 
-
-distance_from_surfaces = Radius*0.5
+r_distance_from_surface = r_coil_surface*0.5
 
 
 Radius_outer_surface = 3
 Radius_outer_surface_z = 2/3 * Radius_outer_surface
-Distance_outer_Surface = Radius_outer_surface - Radius - 1.2
+Distance_outer_Surface = Radius_outer_surface - r_coil_surface - 1.2
 Surface_r = Radius_outer_surface - Distance_outer_Surface
 Surface_z = Radius_outer_surface_z - Distance_outer_Surface
 
-nphi = 32
-ntheta = 32
+nphi = 64
+ntheta = 64
 
 CURRENT = 1e2
 
@@ -92,7 +92,7 @@ BDOTN_WEIGHT = 100
 
 
 CURVATURE_THRESHOLD = 8.5
-DIST_THRESHOLD = distance_from_surfaces
+DIST_THRESHOLD = r_distance_from_surface
 DIST_THRESHOLD_OUT = Distance_outer_Surface
 CCDIST_THRESH = 0.05
 
