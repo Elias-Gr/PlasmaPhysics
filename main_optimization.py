@@ -10,7 +10,7 @@ from simsopt.objectives import SquaredFlux, QuadraticPenalty
 from scipy.optimize import minimize
 import simsoptpp as sopp
 from scipy.optimize import OptimizeResult
-from parameters import *
+from config import *
 from simsopt._core import save
 import runPoincare as rp
 
@@ -33,24 +33,24 @@ coil_torus = SurfaceRZFourier()
 ### change the shape of the surfaces:
 
 inner_torus.set_rc(0,0,R)
-inner_torus.set_rc(1,0,r_coil_surface-r_distance_from_surface)
-inner_torus.set_zs(1,0,r_coil_surface-r_distance_from_surface)
+inner_torus.set_rc(1,0,r_coil_torus-r_distance_from_surface)
+inner_torus.set_zs(1,0,r_coil_torus-r_distance_from_surface)
 
 outer_torus.set_rc(0,0,R)
-outer_torus.set_rc(1,0,r_coil_surface+r_distance_from_surface)
-outer_torus.set_zs(1,0,r_coil_surface+r_distance_from_surface)
+outer_torus.set_rc(1,0,r_coil_torus+r_distance_from_surface)
+outer_torus.set_zs(1,0,r_coil_torus+r_distance_from_surface)
 
 coil_torus.set_rc(0,0,R)
-coil_torus.set_rc(1,0,r_coil_surface)
-coil_torus.set_zs(1,0,r_coil_surface)
+coil_torus.set_rc(1,0,r_coil_torus)
+coil_torus.set_zs(1,0,r_coil_torus)
 
 ### do another surface not as a torus but a ovaloid on the outside to prevent coils outside the outer torus reach
+if OUTER_SURFACE:
+    outer_surface = SurfaceRZFourier()
 
-outer_surface = SurfaceRZFourier()
-
-outer_surface.set_rc(0,0,0)
-outer_surface.set_rc(1,0,Radius_outer_surface)
-outer_surface.set_zs(1,0,Radius_outer_surface_z)
+    outer_surface.set_rc(0,0,0)
+    outer_surface.set_rc(1,0,Radius_outer_surface)
+    outer_surface.set_zs(1,0,Radius_outer_surface_z)
 
 ### importing plasma Surface from vmec
 
@@ -64,7 +64,7 @@ if PRESIM_OPT:
     base_curves = [x.curve for x in coils_presim]
     base_currents = [x.current for x in coils_presim]
 else:
-    base_curves = create_equally_spaced_curves(ncoils, s.nfp, stellsym=True, R0=1, R1=r_coil_surface, order=fourierordercoils)
+    base_curves = create_equally_spaced_curves(ncoils, s.nfp, stellsym=True, R0=1, R1=r_coil_torus, order=fourierordercoils)
     base_currents = [Current(1.0) * CURRENT for i in range(ncoils)]
 
 if FIXEDCURRENT:
@@ -90,15 +90,16 @@ Jcc1 = [LpCurveCurvature(c, 1) for c in base_curves]
 Jcc = sum(QuadraticPenalty(J, CURVATURE_THRESHOLD, 'max') for J in Jcc1)
 Jdist_1 = CurveSurfaceDistance(base_curves, inner_torus, DIST_THRESHOLD)
 Jdist_2 = CurveSurfaceDistance(base_curves, outer_torus, DIST_THRESHOLD)
-Jdist_3 = CurveSurfaceDistance(base_curves, outer_surface, DIST_THRESHOLD_OUT)
 Jccdist = CurveCurveDistance(base_curves, CCDIST_THRESH)
 
 
 
 JF = (BDOTN_WEIGHT*Jf + WEIGHT_CURVE * Jcc + WEIGHT_DIST * Jdist_1 + WEIGHT_DIST * Jdist_2 
-    + CCDIST_WEIGHT * Jccdist + WEIGHT_DIST_OUT * Jdist_3)
+    + CCDIST_WEIGHT * Jccdist )
 
-
+if OUTER_SURFACE:
+    Jdist_3 = CurveSurfaceDistance(base_curves, outer_surface, DIST_THRESHOLD_OUT)
+    JF += WEIGHT_DIST_OUT * Jdist_3
 
 #### create output file
 

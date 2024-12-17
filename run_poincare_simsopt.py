@@ -8,7 +8,7 @@ import os
 import json
 from simsopt._core import load
 from simsopt.field import BiotSavart, coils_via_symmetries
-from parameters import *
+from config import *
 
 
 ####### DESIGN INPUTS ######
