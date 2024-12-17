@@ -4,7 +4,8 @@ import numpy as np
 
 ## all import parameters for "main_optimization"
 
-directory ="/Users/eliasgreil/visual studio/Plasma_Physics/"
+directory = os.path.dirname(os.path.abspath(__file__))
+print(directory)
 
 
 foldername = 'test_surfaces'
@@ -14,12 +15,9 @@ foldername = 'test_surfaces'
 ###### ---------------------- Poincare Parameters ----------------------- ########
 ##################################################################################
 
-POINCARE = False
 
 NFP = 1 # Number of field periods (be careful if you perturbate a single coils, the number of field periods must be 1)
 STELLSYM = False 
-
-
 
 PHIPLANES = [0, np.pi/4,  np.pi/2] 
 
@@ -95,6 +93,9 @@ CURVATURE_THRESHOLD = 8.5
 DIST_THRESHOLD = r_distance_from_surface
 DIST_THRESHOLD_OUT = Distance_outer_Surface
 CCDIST_THRESH = 0.05
+
+
+######## -------- save parameters ----------- #########
 
 os.chdir(directory)
 

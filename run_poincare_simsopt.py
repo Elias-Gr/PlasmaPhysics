@@ -12,7 +12,8 @@ from parameters import *
 
 
 ####### DESIGN INPUTS ######
-os.chdir('/Users/eliasgreil/visual studio/Plasma_Physics/')
+
+os.chdir(directory)
 
 NFP = 1 # Number of field periods (be careful if you perturbate a single coils, the number of field periods must be 1)
 STELLSYM = False 
@@ -21,14 +22,9 @@ LOG_FIELDLINES = True       # If True, print the output of xfiledlines to the co
 input_file_path = foldername + '/bs.json'
 surface_filename = 'input'
 
-output_dir = os.path.join(foldername)  ###foldername
+output_dir = os.path.join(foldername) 
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
-####### FIELDLINE PARAMETERS ######
-
-# nLines = 10                # Number of field lines to trace
-# nPoints = 500              # Number of points on one phi plane e.g. number of cyrcles the field line makes
-
 
 
 ####### BASELINE ######
