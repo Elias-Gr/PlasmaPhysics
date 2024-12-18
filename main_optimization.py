@@ -10,17 +10,40 @@ from simsopt.objectives import SquaredFlux, QuadraticPenalty
 from scipy.optimize import minimize
 import simsoptpp as sopp
 from scipy.optimize import OptimizeResult
-from config import *
 from simsopt._core import save
-import runPoincare as rp
+from config import *
 
-### change into folder (USE YOUR OWN DIRECTORY)
+
+### change into correct directory
 
 os.chdir(directory)
 
 if not os.path.exists(foldername):
     os.mkdir(foldername)
 
+
+if USE_ORIGINAL_PARAMETERS:
+    with open(foldername+'/parameters.json','r') as data:
+        parameters = json.load(data)
+
+    for key, value in parameters.items():
+        if not key == 'foldername':
+            globals()[key] = value
+    del parameters
+
+### creating some more parameters from config input ###
+
+
+
+r_distance_from_surface = r_coil_torus*0.5
+Radius_outer_surface = 3
+Radius_outer_surface_z = 2/3 * Radius_outer_surface
+Distance_outer_Surface = Radius_outer_surface - r_coil_torus - 1.2
+Surface_r = Radius_outer_surface - Distance_outer_Surface
+Surface_z = Radius_outer_surface_z - Distance_outer_Surface
+
+DIST_THRESHOLD = r_distance_from_surface
+DIST_THRESHOLD_OUT = Distance_outer_Surface
 
 #### ---------------- starting conditions and surfaces ------------------ ####
 
@@ -63,6 +86,9 @@ if PRESIM_OPT:
     #coils_presim = load('test_presim/bs.json').coils
     base_curves = [x.curve for x in coils_presim]
     base_currents = [x.current for x in coils_presim]
+elif CUSTOM_CURRENTS:
+    base_curves = create_equally_spaced_curves(ncoils, s.nfp, stellsym=True, R0=1, R1=r_coil_torus, order=fourierordercoils)
+    base_currents = [Current(1.0) * CUSTOM_CURRENTS]
 else:
     base_curves = create_equally_spaced_curves(ncoils, s.nfp, stellsym=True, R0=1, R1=r_coil_torus, order=fourierordercoils)
     base_currents = [Current(1.0) * CURRENT for i in range(ncoils)]
@@ -80,7 +106,6 @@ coils = coils_via_symmetries(base_curves, base_currents, s.nfp, True)
 
 bs = BiotSavart(coils)    # calculates magnetic field from coils
 bs.set_points(s.gamma().reshape((-1, 3)))
-
 
 
 ####  ------- cost function ------- ####
@@ -103,13 +128,10 @@ if OUTER_SURFACE:
 
 #### create output file
 
-stdoutOrigin=sys.stdout 
+stdoutOrigin=sys.stdout
 sys.stdout = open(foldername+"/log.txt", "w")
 
-
-
 #### ----------- minimization ------------ ####
-
 
 B_dot_n = np.sum(bs.B().reshape((nphi, ntheta, 3)) * s.unitnormal(), axis=2)
 

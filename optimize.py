@@ -18,8 +18,8 @@ def change_parameter(parameter, new_value, original=False):
             # Read the file and replace the value
             with open(file_path,'r') as data:
                 params_dict = json.load(data)
-
-            params_dict[parameter] = new_value  #### ITS A STRING!!! AAAA
+            typ = type(params_dict[parameter])
+            params_dict[parameter] = typ(new_value)  
             with open(file_path,'w') as file:
                 json.dump(params_dict, file, indent=4)
             print(f'dict entry {parameter} in {file_path} changed to {new_value}')
@@ -76,15 +76,17 @@ if '-c' in sys.argv:
             change_parameter(parameter,value,original=original_parameters)
 
 
-if '-o' in sys.argv:
-    subprocess.run(['python', 'config.py'])
+if '-o' in sys.argv: 
+    if not original_parameters:
+        subprocess.run(['python', 'config.py'])
     subprocess.run(['python', 'main_optimization.py'])
 elif '-p' in sys.argv:
     subprocess.run(['python', 'run_poincare_simsopt.py'])
 elif '-n' in sys.argv:
     pass
 else:
-    subprocess.run(['python', 'config.py'])
+    if not original_parameters:
+        subprocess.run(['python', 'config.py'])
     subprocess.run(['python', 'main_optimization.py'])
     subprocess.run(['python', 'run_poincare_simsopt.py'])
 

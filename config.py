@@ -8,7 +8,7 @@ import json
 directory = os.path.dirname(os.path.abspath(__file__))
 
 
-foldername = "output_2"
+foldername = "output_4"
 
 USE_ORIGINAL_PARAMETERS = True
 
@@ -32,7 +32,7 @@ PLOT_PARAMS = {
         "ZLIM": [-0.42 * 0.33, 0.42 * 0.33]
     }
 
-nLines = 10
+nLines = 20
 
 RSTART = (np.linspace(0.5, 1.3, nLines)).tolist()
 ZSTART = np.zeros(nLines).tolist()
@@ -69,15 +69,6 @@ r_coil_torus = 0.6
 
 R = 1
 
-r_distance_from_surface = r_coil_torus*0.5
-
-
-Radius_outer_surface = 3
-Radius_outer_surface_z = 2/3 * Radius_outer_surface
-Distance_outer_Surface = Radius_outer_surface - r_coil_torus - 1.2
-Surface_r = Radius_outer_surface - Distance_outer_Surface
-Surface_z = Radius_outer_surface_z - Distance_outer_Surface
-
 nphi = 32
 ntheta = 32
 
@@ -95,8 +86,7 @@ BDOTN_WEIGHT = 10000
 
 
 CURVATURE_THRESHOLD = 8.5
-DIST_THRESHOLD = r_distance_from_surface
-DIST_THRESHOLD_OUT = Distance_outer_Surface
+
 CCDIST_THRESH = 0.05
 
 
@@ -109,10 +99,8 @@ if __name__ == "__main__":
     if not os.path.exists(foldername):
         os.mkdir(foldername)
 
-    user_defined_vars = {name: value for name, value in globals().items() if not name.startswith("__")}
-    user_defined_vars['os'] = None
-    user_defined_vars['np'] = None
-    user_defined_vars['json'] = None
+    user_defined_vars = {name: value for name, value in globals().items() if not (name.startswith("__") or "np" or "os" or "json")}
+
 
     with open(foldername+"/parameters.json", 'w') as file:
         json.dump(user_defined_vars, file, indent = 4)

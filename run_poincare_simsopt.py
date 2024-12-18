@@ -26,6 +26,14 @@ output_dir = os.path.join(foldername)
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
+if USE_ORIGINAL_PARAMETERS:
+    with open(foldername+'/parameters.json','r') as data:
+        parameters = json.load(data)
+
+    for key, value in parameters.items():
+        if not key == 'foldername':
+            globals()[key] = value
+    del parameters
 
 ####### BASELINE ######
 # Set to True to run without perturbations
