@@ -4,9 +4,8 @@ Elias Greil, Sebastian Riepl,
 
 
 Simsopt
-aufsetzen, Beispiele: Magnetfeld visualisieren
 
-
+Plasma:
 https://quasr.flatironinstitute.org/model/0021326
 
 https://github.com/itpplasma/ALPES/tree/main
