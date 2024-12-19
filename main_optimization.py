@@ -100,7 +100,8 @@ coils = coils_via_symmetries(base_curves, base_currents, s.nfp, True)
 
 ### plot coils and surface:
 
-#plot([surface_coils] + coils +[s], engine="plotly", close=True, opacity = 0.5)
+plot(coils +[s], engine="plotly", close=True)
+exit()
 
 ### creating biotsavard object for flux penalty
 
@@ -135,9 +136,28 @@ sys.stdout = open(foldername+"/log.txt", "w")
 
 B_dot_n = np.sum(bs.B().reshape((nphi, ntheta, 3)) * s.unitnormal(), axis=2)
 
-
+""" 
 def fun(dofs):
     JF.x = dofs
+    return JF.J(), JF.dJ() """
+
+# List to store intermediate values
+call_result = {
+    'JF':[],
+    'Jf':[]
+}           
+
+def fun(dofs):
+    JF.x = dofs  # Update the decision variables in JF
+
+    # Compute Jf explicitly (assuming Jf can be evaluated from JF or independently)
+    Jf_value = SquaredFlux(s, bs, definition='quadratic flux')
+
+
+    # Store Jf in the list for tracking
+    #call_result['JF'].append(JF.J())
+    call_result['Jf'].append(Jf_value.J())
+
     return JF.J(), JF.dJ()
 
 print("""
@@ -170,13 +190,13 @@ B_dot_n_max = np.max(np.abs(B_dot_n)).copy()
 
 ####  creating function to extract cost function at each iteration step and save into call_result array
 
-call_result = []
+#call_result = []
 
 def callback(intermediate_result: OptimizeResult):
-    call_result.append(intermediate_result['fun'])
+    call_result['JF'].append(intermediate_result['fun'])
 
 res = minimize(fun, dofs, jac=True, method='L-BFGS-B',
-               options={'maxiter': MAXITER, 'maxcor': 500, 'iprint': 5}, tol=1e-15, 
+               options={'maxiter': MAXITER, 'maxcor': 500, 'iprint': 5}, tol=1e-15,
                callback=callback)
 
 B_dot_n = np.sum(bs.B().reshape((nphi, ntheta, 3)) * s.unitnormal(), axis=2)
@@ -190,12 +210,24 @@ print('Final max|B dot n|:', np.max(np.abs(B_dot_n)))
 
 #### plotting cost function over iteration
 
-plt.plot(call_result)
+call_result['JF'] = np.array([float(x) for x in call_result['JF']])
+call_result['Jf'] = np.array([float(x) for x in call_result['Jf']])
+
+plt.figure()
+plt.plot(np.asarray(call_result['JF']))
 plt.xlabel('iterations')
 plt.ylabel('F(x)')
 plt.yscale('log')
 plt.grid('minor')
 plt.savefig(foldername+'/cost_function.png')
+
+plt.figure()
+plt.plot(np.asarray(call_result['Jf']))
+plt.xlabel('iterations')
+plt.ylabel('F(x)')
+plt.yscale('log')
+plt.grid('minor')
+plt.savefig(foldername+'/fluxpenalty.png')
 
 
 

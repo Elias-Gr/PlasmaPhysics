@@ -305,7 +305,7 @@ def run_poincare_simsopt(coils, variant, output_dir, surface ,SAVE_PERTURBATIONS
     stopping_crit = [LevelsetStoppingCriterion(sc_fieldline.dist)]
 
 
-    def trace_fieldlines(bfield, label):
+    def trace_fieldlines(bfield, label, surface):
         t1 = time.time()
         # Set initial grid of points for field line tracing, going from
         # the magnetic axis to the surface. 
@@ -320,7 +320,7 @@ def run_poincare_simsopt(coils, variant, output_dir, surface ,SAVE_PERTURBATIONS
             phis=phis, stopping_criteria=stopping_crit)
         t2 = time.time()
         print(f"Time for fieldline tracing={t2-t1:.3f}s. Num steps={sum([len(l) for l in fieldlines_tys])//nfieldlines}", flush=True)
-        plot_poincare_data(fieldlines_phi_hits, phis, os.path.join(output_dir, f'{label}.png'), dpi=150)
+        plot_poincare_data(fieldlines_phi_hits, phis, os.path.join(output_dir, f'{label}.png'), dpi=150, surf=surface)
 
 
     #interpolation of magnetic field for faster calculation
@@ -358,7 +358,7 @@ def run_poincare_simsopt(coils, variant, output_dir, surface ,SAVE_PERTURBATIONS
     print("|B-Bh| on surface:", np.sort(np.abs(B-Bh).flatten()))
 
     print('Beginning field line tracing')
-    trace_fieldlines(bsh, 'filedlines_' + variant) 
+    trace_fieldlines(bsh, 'filedlines_' + variant, surface) 
 
     print("Done calculating Poincare plot")
     print("========================================")

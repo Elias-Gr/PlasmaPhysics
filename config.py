@@ -8,9 +8,9 @@ import json
 directory = os.path.dirname(os.path.abspath(__file__))
 
 
-foldername = "output_4"
+foldername = "test_Radius_0.55"
 
-USE_ORIGINAL_PARAMETERS = True
+USE_ORIGINAL_PARAMETERS = False
 
 ##################################################################################
 ###### ---------------------- Poincare Parameters ----------------------- ########
@@ -20,7 +20,7 @@ USE_ORIGINAL_PARAMETERS = True
 NFP = 1 # Number of field periods (be careful if you perturbate a single coils, the number of field periods must be 1)
 STELLSYM = False 
 
-PHIPLANES = [0, np.pi/4,  np.pi/2] 
+PHIPLANES = [np.pi/8, np.pi/4,  np.pi/2] 
 
 PLOT_PARAMS = {
         "NPOINC": 32,
@@ -28,11 +28,11 @@ PLOT_PARAMS = {
         "SAVE": True,
         "SHOW": False,
         "KEEP_RESULT_DATA": False,
-        "RLIM": [0.5 * 0.33, 1.4 * 0.33],
-        "ZLIM": [-0.42 * 0.33, 0.42 * 0.33]
+        "RLIM": [1, 1.3],
+        "ZLIM": [0,0]#[-0.42 * 0.33, 0.42 * 0.33]
     }
 
-nLines = 20
+nLines = 30
 
 RSTART = (np.linspace(0.5, 1.3, nLines)).tolist()
 ZSTART = np.zeros(nLines).tolist()
@@ -42,8 +42,8 @@ FILEDLINE_PARAMS = {
         "STELL_SYM": STELLSYM,
         "R_START": RSTART,
         "Z_START": ZSTART,
-        "FOLLOW_TOL": 1e-7,
-        "TMAX": 2500,
+        "FOLLOW_TOL": 1e-10,
+        "TMAX": 25000,
         "DEGREE": 4,
         "NPLANES": 4
 
