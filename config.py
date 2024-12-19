@@ -10,6 +10,8 @@ directory = os.path.dirname(os.path.abspath(__file__))
 
 foldername = "test_Radius_0.55"
 
+plasma_surface_filename = "input" # Vmec file of plasma surface to use for optmization
+
 USE_ORIGINAL_PARAMETERS = False
 
 ##################################################################################

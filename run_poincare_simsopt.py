@@ -8,6 +8,7 @@ import os
 import json
 from simsopt._core import load
 from simsopt.field import BiotSavart, coils_via_symmetries
+plasma_surface_filename = "input"
 from config import *
 
 
@@ -20,7 +21,7 @@ STELLSYM = False
 LOG_FIELDLINES = True       # If True, print the output of xfiledlines to the console
 
 input_file_path = foldername + '/bs.json'
-surface_filename = 'input'
+surface_filename = plasma_surface_filename
 
 output_dir = os.path.join(foldername) 
 if not os.path.exists(output_dir):
@@ -31,7 +32,7 @@ if USE_ORIGINAL_PARAMETERS:
         parameters = json.load(data)
 
     for key, value in parameters.items():
-        if not key == 'foldername':
+        if not key == "foldername":
             globals()[key] = value
     del parameters
 

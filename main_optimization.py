@@ -77,7 +77,7 @@ if OUTER_SURFACE:
 
 ### importing plasma Surface from vmec
 
-s = SurfaceRZFourier.from_vmec_input('input', range="full torus", nphi=nphi, ntheta=ntheta)
+s = SurfaceRZFourier.from_vmec_input(plasma_surface_filename, range="full torus", nphi=nphi, ntheta=ntheta)
 
 ### creating coils as starting condition
 
