@@ -7,10 +7,11 @@ import json
 
 directory = os.path.dirname(os.path.abspath(__file__))
 
+# Result folder for all your result files and plots
+foldername = "test_Radius_0.55" 
 
-foldername = "test_Radius_0.55"
-
-plasma_surface_filename = "input" # Vmec file of plasma surface to use for optmization
+# Vmec file of plasma surface to use for optmization
+plasma_surface_filename = "input" 
 
 USE_ORIGINAL_PARAMETERS = False
 
@@ -18,8 +19,10 @@ USE_ORIGINAL_PARAMETERS = False
 ###### ---------------------- Poincare Parameters ----------------------- ########
 ##################################################################################
 
+# Number of field periods (be careful if you perturbate a single coils, the number of field periods must be 1)
 
-NFP = 1 # Number of field periods (be careful if you perturbate a single coils, the number of field periods must be 1)
+NFP = 1 
+
 STELLSYM = False 
 
 PHIPLANES = [np.pi/8, np.pi/4,  np.pi/2] 
@@ -33,6 +36,8 @@ PLOT_PARAMS = {
         "RLIM": [1, 1.3],
         "ZLIM": [0,0]#[-0.42 * 0.33, 0.42 * 0.33]
     }
+
+# define starting points of the space curves for the poincare plots
 
 nLines = 30
 
@@ -51,45 +56,65 @@ FILEDLINE_PARAMS = {
 
     }
 
+# use the pre-optimized from vtu file
+
+
 PRESIM = False
 
 ###################################################################################
 ###### ------------------- Optimization Parameters ----------------------- ########
 ###################################################################################
 
+
 PRESIM_OPT = False
 
-CUSTOM_CURRENTS = False
-
-OUTER_SURFACE = False
+# maximum iterations of minimization algorithm:
 
 MAXITER = 1234
 
-FIXEDCURRENT = True
+# minor radius of torus to fix the coils onto:
 
 r_coil_torus = 0.6
 
+# major radius of torus:
+
 R = 1
+
+# number of angle points for plasma surface
 
 nphi = 32
 ntheta = 32
 
+#  starting current of the coils:
+
 CURRENT = 1e5
+
+FIXEDCURRENT = True
+
+CUSTOM_CURRENTS = False
+
+# fourierorder of the coils used for optimization (the more the more complex)
 
 fourierordercoils = 2
 
+# number of coils per quarter:
+
 ncoils = 3
 
-WEIGHT_DIST = 1000
-WEIGHT_DIST_OUT = 1000
-WEIGHT_CURVE = 1
-CCDIST_WEIGHT = 1000
-BDOTN_WEIGHT = 10000
+### weights for the different cost function objects:
+
+DISTANCE_TORUS = 1000
+DISTANCE_OUTER_SURFACE = 1000
+CURVATURE = 1
+CURVECURVEDISTANCE = 1000
+FLUX = 10000
 
 
-CURVATURE_THRESHOLD = 8.5
+# threshholds for different cost function measures
 
-CCDIST_THRESH = 0.05
+CURVATURE_THRESH = 8.5
+
+CURVECURVEDIST_THRESH = 0.05
 
 
 ######## -------- save parameters ----------- #########

@@ -111,21 +111,19 @@ bs.set_points(s.gamma().reshape((-1, 3)))
 
 ####  ------- cost function ------- ####
 
-Jf = SquaredFlux(s, bs, definition = 'quadratic flux')
-Jcc1 = [LpCurveCurvature(c, 1) for c in base_curves]
-Jcc = sum(QuadraticPenalty(J, CURVATURE_THRESHOLD, 'max') for J in Jcc1)
-Jdist_1 = CurveSurfaceDistance(base_curves, inner_torus, DIST_THRESHOLD)
-Jdist_2 = CurveSurfaceDistance(base_curves, outer_torus, DIST_THRESHOLD)
-Jccdist = CurveCurveDistance(base_curves, CCDIST_THRESH)
+J_flux = SquaredFlux(s, bs, definition = 'quadratic flux')
+J_cc = [LpCurveCurvature(c, 1) for c in base_curves]
+J_curvecurvature = sum(QuadraticPenalty(J, CURVATURE_THRESH, 'max') for J in J_cc)
+J_curvesurfacedistance_inner_torus = CurveSurfaceDistance(base_curves, inner_torus, DIST_THRESHOLD)
+J_curvesurfacedistance_outer_torus = CurveSurfaceDistance(base_curves, outer_torus, DIST_THRESHOLD)
+J_curvecurvedistance = CurveCurveDistance(base_curves, CURVECURVEDIST_THRESH)
+J_curvesurfacedistance_outersurface = CurveSurfaceDistance(base_curves, outer_surface, DIST_THRESHOLD_OUT)
 
 
 
-JF = (BDOTN_WEIGHT*Jf + WEIGHT_CURVE * Jcc + WEIGHT_DIST * Jdist_1 + WEIGHT_DIST * Jdist_2 
-    + CCDIST_WEIGHT * Jccdist )
+JF = (FLUX * J_flux + CURVATURE * J_curvecurvature + DISTANCE_TORUS * J_curvesurfacedistance_inner_torus + DISTANCE_TORUS * J_curvesurfacedistance_outer_torus 
+    + CURVECURVEDISTANCE * J_curvecurvedistance + DISTANCE_OUTER_SURFACE * J_curvesurfacedistance_outersurface)
 
-if OUTER_SURFACE:
-    Jdist_3 = CurveSurfaceDistance(base_curves, outer_surface, DIST_THRESHOLD_OUT)
-    JF += WEIGHT_DIST_OUT * Jdist_3
 
 #### create output file
 

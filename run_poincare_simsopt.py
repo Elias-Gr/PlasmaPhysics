@@ -8,7 +8,6 @@ import os
 import json
 from simsopt._core import load
 from simsopt.field import BiotSavart, coils_via_symmetries
-plasma_surface_filename = "input"
 from config import *
 
 
