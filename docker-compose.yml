@@ -1,0 +1,24 @@
+# Copyright (c) Jupyter Development Team.
+# Distributed under the terms of the Modified BSD License.
+
+# JupyterHub docker compose configuration file
+version: "3"
+services:
+  CWS:
+    image: CWS:1.0
+    restart: always
+    container_name: CWS
+    networks:
+      - simsopt-network
+    volumes:
+      - "CWS-data:/my_mount"
+    ports:
+      - "8080:8080"
+    command: bash -c "cd /my_mount && jupyter notebook --ip 0.0.0.0 --port 8080 --allow-root --no-browser "
+
+volumes:
+  CWS-data:
+
+networks:
+  simsopt-network:
+    name: simsopt-network
